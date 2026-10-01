@@ -5,7 +5,11 @@ import { timeLog } from 'console';
 
 const app: Express = express();
 
+app.listen(3000)
+app.use(express.json)
+
 app.use('/user', userrouter);
+app.use('/role',rolerouter);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!');
@@ -16,7 +20,6 @@ userrouter.get('/', (req: Request, res:Response) => {
   res.send('User home page')
 })
 
-app.listen(3000);
 
 
 

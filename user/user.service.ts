@@ -80,7 +80,7 @@ const updateUser = (user: User) => {
     return getAllUsers();
 }
 
-const deleteUser = (id: String) => {
+const deleteUser = (id: string) => {
 
     const index = users.findIndex(u => u.id === id)
 
