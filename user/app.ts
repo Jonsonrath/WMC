@@ -4,9 +4,9 @@ import rolerouter from './role.route.ts';
 import { timeLog } from 'console';
 
 const app: Express = express();
+const port = Number(process.env.PORT ?? 3000);
 
-app.listen(3000)
-app.use(express.json)
+app.use(express.json())
 
 app.use('/user', userrouter);
 app.use('/role',rolerouter);
@@ -20,6 +20,6 @@ userrouter.get('/', (req: Request, res:Response) => {
   res.send('User home page')
 })
 
-
-
-
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});

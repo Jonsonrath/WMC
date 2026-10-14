@@ -1,5 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
-import { createUser, getAllUsers, deleteUser, updateUser } from './user.service.ts'
+import {getAllUsers, createUser, deleteUser, updateUser} from './user.db.service.ts';
+//import { createUser, deleteUser, updateUser } from './user.service.ts';
 
 const userRouter = express.Router();
 
@@ -19,9 +20,15 @@ userRouter.use(timeLog);
 
 // GET all users
 userRouter.get('/', (req: Request, res: Response) => {
-  const users = getAllUsers();
+//  const users = getAllUsers();
 
-  res.status(200).json(users);
+//  res.status(200).json(users);
+
+  getAllUsers()
+  .then(users => {
+    res.send(users);
+  })
+
 });
 
 
@@ -40,6 +47,13 @@ userRouter.post('create', (req: Request, res: Response) => {
   res.status(201).json(createdUser);
 
 */
+
+  const user = req.body;
+
+  createUser(user).then(response => {
+    res.send(response);
+  });
+
 });
 
 
@@ -70,7 +84,7 @@ userRouter.put('/update/:id', (req: Request, res: Response) => {
 userRouter.delete('/delete/:id', (req: Request, res: Response) => {
   const id = req.params.id as string;
 
-  const deleted = deleteUser(id);
+  const deleted : boolean = deleteUser(id);
 
   if (!deleted) {
     return res.status(404).send({
