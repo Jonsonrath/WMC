@@ -1,24 +1,17 @@
-import express, { type Request, type Response, type NextFunction } from 'express';
-import {getAllUsers, createUser, deleteUser, updateUser} from './user.db.service.ts';
+import express, { type Request, type Response, type NextFunction} from 'express';
+import {getAllUsers, createUser, deleteUser, updateUser, getUser, exists} from '../db services/user.db.service.ts';
 //import { createUser, deleteUser, updateUser } from './user.service.ts';
 
 const userRouter = express.Router();
 
 
-// Router-specific middleware
-const timeLog = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  console.log('Time:', Date.now());
-  next();
-};
-
-userRouter.use(timeLog);
+userRouter.use((req: Request, res: Response, next: NextFunction) => {
+    console.log('Time:', Date.now());
+    next();
+});
 
 
-// GET all users
+
 userRouter.get('/', (req: Request, res: Response) => {
 //  const users = getAllUsers();
 
@@ -32,7 +25,6 @@ userRouter.get('/', (req: Request, res: Response) => {
 });
 
 
-// CREATE user
 userRouter.post('create', (req: Request, res: Response) => {
 /*  const user = req.body;
 
@@ -56,41 +48,32 @@ userRouter.post('create', (req: Request, res: Response) => {
 
 });
 
-
-// UPDATE user
 userRouter.put('/update/:id', (req: Request, res: Response) => {
-  const id = req.params.id;
-  const updatedUser = req.body;
+    const id = req.params.id as string;
+    const updatedUser = req.body;
 
-  const users = getAllUsers();
+    getUser(id).then(user => {
+        if (!user) {
+            return res.status(404).send("USER NOT FOUND");
+        }
 
-  if (!users) {
-    return res.status(404).send("USERS NOT FOUND");
-  }
+        Object.assign(user, updatedUser);
 
-  const user = users.find(user => user.id === id);
-
-  if (!user) {
-    return res.status(404).send("USER NOT FOUND");
-  }
-
-  Object.assign(user, updatedUser);
-
-  res.status(200).json(user);
+        updateUser(user).then(() => {
+            res.status(200).json(user);
+        });
+    });
 });
 
 
-// DELETE user
 userRouter.delete('/delete/:id', (req: Request, res: Response) => {
   const id = req.params.id as string;
-
-  const deleted : boolean = deleteUser(id);
-
-  if (!deleted) {
-    return res.status(404).send({
-      message: 'User not found'
-    });
+  
+  if(!exists(id)){
+    res.status(404).send("User not found")
   }
+
+  deleteUser(id);
 
   res.status(200).send({
     message: 'User was deleted'

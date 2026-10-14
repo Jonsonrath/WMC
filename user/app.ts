@@ -1,6 +1,6 @@
 import express, { type Express, type Request, type Response } from 'express';
-import userrouter from './user.route.ts';
-import rolerouter from './role.route.ts';
+import userrouter from './route/user.route.ts';
+import rolerouter from './route/role.route.ts';
 import { timeLog } from 'console';
 
 const app: Express = express();
