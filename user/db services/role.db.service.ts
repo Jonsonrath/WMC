@@ -1,33 +1,15 @@
-export interface Role {
-    id: number
-    title: string
-
-}
-
-
-
-const roles: Role[] = [
-    {
-        id: 1,
-        title: "user"
-    },
-    {
-        id: 2,
-        title: "generic"
-    },
-    {
-        id: 3,
-        title: "admin"
-    }
-]
-
-
+import db from "./db.ts";
 
 const getAllRoles = () => {
+    return db.role.findMany({
+        orderBy: { id: "asc" },
+    });
+};
 
-}
 const getRole = (id: number) => {
+    return db.role.findUnique({
+        where: { id },
+    });
+};
 
-}
-
-export {getAllRoles, getRole}
+export { getAllRoles, getRole };

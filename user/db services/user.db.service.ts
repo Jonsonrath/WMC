@@ -1,92 +1,69 @@
+import type { Prisma } from "../generated/prisma/client.ts";
+import db from "./db.ts";
 
-import type { Role } from "../services/role.service.ts";
-import dbConnection from "./db.ts";
-import type { RowDataPacket, ResultSetHeader } from "mysql2";
-
-interface User extends RowDataPacket {
-    id?: string;
+type UserInput = {
+    id?: number;
     name: string;
     roleId: number;
-    role?: Role;
-}
+};
+
+const userWithRole = {
+    role: true,
+} satisfies Prisma.UserInclude;
 
 const getAllUsers = () => {
-    return dbConnection()
-    .then(conn => {
-        return conn.query<User[]>('SELECT * FROM user')
-        .then(res => conn.end().then(() => res));
-    })
-    .then(([rows, fields]) => rows)
-    .catch(err => console.log(err));
-};
-
-const getUser = (id: string) => {
-    return dbConnection()
-    .then(conn => {
-        return conn.query<User[]>(
-            'SELECT * FROM user WHERE id = ?', [id]
-        )
-        .then(res => conn.end().then(() => res));
-    })
-    .then(([rows, fields]) => rows[0])
-    .catch(err => console.log(err));
-};
-
-const createUser = (user: User) => {
-    return dbConnection()
-    .then(conn => {
-        return conn.query<ResultSetHeader>(
-            'INSERT INTO user (name, roleId) VALUES (?, ?)',
-            [user.name, user.roleId]
-        )
-        .then(res => conn.end().then(() => res));
-    })
-    .then(([rows, fields]) => rows)
-    .catch(err => console.log(err));
-};
-
-const updateUser = (user: User) => {
-    return dbConnection()
-    .then(conn => {
-        return conn.query<ResultSetHeader>(
-            'UPDATE user SET name = ?, roleId = ? WHERE id = ?',
-            [user.name, user.roleId, user.id]
-        )
-        .then(res => conn.end().then(() => res));
-    })
-    .then(([rows, fields]) => rows)
-    .catch(err => console.log(err));
-};
-
-const deleteUser = (id: string) => {
-    return dbConnection()
-    .then(conn => {
-        return conn.query<ResultSetHeader>(
-            'DELETE FROM user WHERE id = ?', [id]
-        )
-        .then(res => conn.end().then(() => res));
-    })
-    .then(([rows, fields]) => rows)
-    .catch(err => console.log(err));
-};
-
-const exists = (user: User | string): Promise<boolean> => {
-    const id = typeof user === 'string' ? user : user.id;
-
-    if (!id) return Promise.resolve(false);
-
-    return dbConnection()
-    .then(conn => {
-        return conn.query<User[]>(
-            'SELECT id FROM user WHERE id = ?', [id]
-        )
-        .then(res => conn.end().then(() => res));
-    })
-    .then(([rows, fields]) => rows.length > 0)
-    .catch(err => {
-        console.log(err);
-        return false;
+    return db.user.findMany({
+        include: userWithRole,
+        orderBy: { id: "asc" },
     });
+};
+
+const getUser = (id: number) => {
+    return db.user.findUnique({
+        where: { id },
+        include: userWithRole,
+    });
+};
+
+const createUser = (user: UserInput) => {
+    return db.user.create({
+        data: {
+            name: user.name,
+            roleId: user.roleId,
+        },
+        include: userWithRole,
+    });
+};
+
+const updateUser = (user: UserInput) => {
+    if (!user.id) {
+        return Promise.reject(new Error("Cannot update a user without an id"));
+    }
+
+    return db.user.update({
+        where: { id: user.id },
+        data: {
+            name: user.name,
+            roleId: user.roleId,
+        },
+        include: userWithRole,
+    });
+};
+
+const deleteUser = (id: number) => {
+    return db.user.delete({
+        where: { id },
+    });
+};
+
+const exists = (user: UserInput | number): Promise<boolean> => {
+    const id = typeof user === "number" ? user : user.id;
+
+    if (!id) {
+        return Promise.resolve(false);
+    }
+
+    return db.user.count({ where: { id } }).then(count => count > 0);
 };
 
 export { getAllUsers, getUser, createUser, updateUser, deleteUser, exists };

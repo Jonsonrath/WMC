@@ -12,20 +12,21 @@ userRouter.use((req: Request, res: Response, next: NextFunction) => {
 
 
 
-userRouter.get('/', (req: Request, res: Response) => {
+userRouter.get('/', async (req: Request, res: Response) => {
 //  const users = getAllUsers();
 
 //  res.status(200).json(users);
 
-  getAllUsers()
-  .then(users => {
+  try {
+    const users = await getAllUsers();
     res.send(users);
-  })
-
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Database error');
+  }
 });
 
-
-userRouter.post('create', (req: Request, res: Response) => {
+userRouter.post('/create', async (req: Request, res: Response) => {
 /*  const user = req.body;
 
   if (!user) {
@@ -42,42 +43,67 @@ userRouter.post('create', (req: Request, res: Response) => {
 
   const user = req.body;
 
-  createUser(user).then(response => {
-    res.send(response);
-  });
-
-});
-
-userRouter.put('/update/:id', (req: Request, res: Response) => {
-    const id = req.params.id as string;
-    const updatedUser = req.body;
-
-    getUser(id).then(user => {
-        if (!user) {
-            return res.status(404).send("USER NOT FOUND");
-        }
-
-        Object.assign(user, updatedUser);
-
-        updateUser(user).then(() => {
-            res.status(200).json(user);
-        });
-    });
-});
-
-
-userRouter.delete('/delete/:id', (req: Request, res: Response) => {
-  const id = req.params.id as string;
-  
-  if(!exists(id)){
-    res.status(404).send("User not found")
+  try {
+    const createdUser = await createUser(user);
+    res.status(201).send(createdUser);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Database error');
   }
 
-  deleteUser(id);
+});
 
-  res.status(200).send({
-    message: 'User was deleted'
-  });
+userRouter.put('/update/:id', async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const updatedUser = req.body;
+
+    if (!Number.isInteger(id) || id < 1) {
+        res.status(400).send("Invalid user ID");
+        return;
+    }
+
+    try {
+        const user = await getUser(id);
+        if (!user) {
+            res.status(404).send("USER NOT FOUND");
+            return;
+        }
+
+        const result = await updateUser({
+            id,
+            name: updatedUser.name,
+            roleId: updatedUser.roleId,
+        });
+        res.status(200).json(result);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Database error');
+    }
+});
+
+
+userRouter.delete('/delete/:id', async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).send("Invalid user ID");
+    return;
+  }
+  
+  try {
+    if (!await exists(id)) {
+      res.status(404).send("User not found");
+      return;
+    }
+
+    await deleteUser(id);
+    res.status(200).send({
+      message: 'User was deleted'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Database error');
+  }
 });
 
 
