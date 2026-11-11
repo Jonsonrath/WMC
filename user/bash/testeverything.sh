@@ -40,7 +40,7 @@ request() {
 }
 
 new_id() {
-    jq -er '.insertId | select(type == "number" and . > 0)' "$result"
+    jq -er '.id | select(type == "number" and . > 0)' "$result"
 }
 
 echo "Teste API: $BASE_URL"
@@ -52,6 +52,8 @@ request GET /role/1 200
 request GET /role/2 200
 request GET /role/3 200
 request GET /role/abc 400
+request GET /role/2147483648 400
+request GET /missing 404
 
 # User anzeigen und drei neue User erstellen
 request GET /user 200
@@ -77,9 +79,14 @@ request GET "/user/$id2" 200
 # Dritten User löschen und 404 prüfen
 request DELETE "/user/delete/$id3" 200
 request GET "/user/$id3" 404
+request DELETE "/user/delete/$id3" 404
+request PUT "/user/update/$id3" 404 '{"name":"Missing","roleId":1}'
 
 # Fehlerfall beim Erstellen und Endstand abfragen
 request POST /user/create 400 '{"name":""}'
+request POST /user/create 400 '{"name":"Valid","roleId":0}'
+request POST /user/create 400 '{"name":"Valid","roleId":2147483647}'
+request POST /user/create 400 '{bad json'
 request GET /user 200
 
 printf '\nAlle HTTP-Status-Tests erfolgreich.\n'

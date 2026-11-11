@@ -1,0 +1,3 @@
+- [x] DELETE reparieren
+- [x] GET /user/:id hinzufügen
+- [x] SQL-Skript erstellen (prisma/schema.sql)

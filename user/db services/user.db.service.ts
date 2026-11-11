@@ -2,7 +2,6 @@ import type { Prisma } from "../generated/prisma/client.ts";
 import db from "./db.ts";
 
 type UserInput = {
-    id?: number;
     name: string;
     roleId: number;
 };
@@ -35,10 +34,7 @@ const createUser = (user: UserInput) => {
     });
 };
 
-const updateUser = (user: UserInput) => {
-    if (!user.id) {
-        return Promise.reject(new Error("Cannot update a user without an id"));
-    }
+const updateUser = (user: UserInput & { id: number }) => {
 
     return db.user.update({
         where: { id: user.id },
@@ -51,19 +47,9 @@ const updateUser = (user: UserInput) => {
 };
 
 const deleteUser = (id: number) => {
-    return db.user.delete({
+    return db.user.deleteMany({
         where: { id },
     });
 };
 
-const exists = (user: UserInput | number): Promise<boolean> => {
-    const id = typeof user === "number" ? user : user.id;
-
-    if (!id) {
-        return Promise.resolve(false);
-    }
-
-    return db.user.count({ where: { id } }).then(count => count > 0);
-};
-
-export { getAllUsers, getUser, createUser, updateUser, deleteUser, exists };
+export { getAllUsers, getUser, createUser, updateUser, deleteUser };
