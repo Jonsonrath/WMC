@@ -1,55 +1,11 @@
+
 # 01 Fallacies im eigenen Service
 
 **Partner:** Luca Aigner
 
-## 1. Netzwerk zuverlässig
-
-**Was passiert bei mir?**
-
-- DB gestoppt ==> HTTP 500 nach ca. 10s (`INTERNAL_ERROR`)
-- Node läuft weiter
-- DB wieder gestartet ==> alles funktioniert wieder (ohne Neustart)
-
-**Verbesserung:**
-
-- HTTP 503 statt 500 zurückgeben
-- Kürzere Timeouts + Health-Check einbauen
-
-## 2. Latenz null
-
-**Was passiert bei mir?**
-
-- `GET /user` ==> 2 Queries, auch bei 202 Usern
-- Kein N+1 Problem
-- 50ms pro Query ==> ca. 100ms insgesamt (ohne Verarbeitung)
-
-**Verbesserung:**
-
-- `include: { role: true }` beibehalten
-- Pagination einbauen ==> nicht alle User auf einmal laden
-
-## 3. Topologie fix
-
-**Was passiert bei mir?**
-
-- DB-Service `db` umbenannt ==> phpMyAdmin findet DB nicht mehr (`PMA_HOST: db`)
-- App funktioniert weiterhin ==> verwendet `127.0.0.1:3306`
-
-**Verbesserung:**
-
-- Hostnamen in der Config anpassen
-- Umgebungsvariablen (`.env`) verwenden
-
-## 4. Netzwerk sicher
-
-**Was passiert bei mir?**
-
-- Ports `3306`, `8081`, `3000` auf `0.0.0.0` erreichbar
-- Passwort `secret` im Code/Compose
-- API ohne Auth ==> jeder mit Zugriff kann User ändern/löschen
-
-**Verbesserung:**
-
-- Ports nur lokal binden (`127.0.0.1`)
-- Passwörter aus Code/Compose entfernen
-- Authentifizierung einbauen
+| Irrtum | Was passiert bei mir? | Wie könnte man es beheben? |
+|---|---|---|
+| **Netzwerk zuverlässig** | DB auf `10.10.0.249:3306` erreichbar. `GET /users` ==> HTTP 200 nach ca. 98 ms. `GET /users/1` ==> HTTP 404. DB-Ausfall nicht getestet (kein Docker-Zugriff). | HTTP 503 bei DB-Ausfall zurückgeben, kürzere Timeouts + Health-Check einbauen. |
+| **Latenz null** | 10 TCP-Verbindungen ==> 14–20 ms. `GET /users` ==> ca. 15–53 ms. SQL-Query mit `SLEEP(0.05)` ==> 50 ms. Prisma-Query-Anzahl nicht überprüft. | `include: { role: true }` verwenden, um N+1 zu vermeiden. Pagination einbauen. |
+| **Topologie fix** | DB läuft in Docker (`c30c0327867e`). MariaDB über Port `3306` erreichbar. Service-Umbenennung nicht getestet (kein Docker-Zugriff). | Hostnamen über `.env` konfigurieren. Bei Änderungen `DATABASE_URL` und `PMA_HOST` anpassen. |
+| **Netzwerk sicher** | Ports `3000` und `3306` erreichbar, `8081` geschlossen. Remote-Login als `root@%` funktioniert. Root hat `ALL PRIVILEGES`. TLS deaktiviert (`have_ssl = DISABLED`). | DB-Port nur intern freigeben, TLS aktivieren, Remote-Root-Zugriff einschränken und eigenen DB-User verwenden. |
